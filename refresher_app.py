@@ -100,13 +100,13 @@ def tab_introduction():
     st.markdown("**Business value:** filters noise, surfaces signal, adapts on the fly.")
     st.markdown("**Why it changed the game:** enables models to keep track of long context and nuance.")
 
-    st.markdown("#### Real-World Applications")
-    st.write("- Search & Q/A, chat assistants, document summarization")
-    st.write("- Code completion, SQL generation")
-    st.write("- Customer support triage, CRM note summarization")
-    st.write("- Fraud/anomaly detection")
-    st.write("- Product recommendations")
-    st.write("- Vision & speech: captioning, recognition")
+    st.markdown("#### Example of Real-World Applications")
+    st.write("a) Search & Q/A, chat assistants, document summarization")
+    st.write("b) Code completion, SQL generation")
+    st.write("c) Customer support triage, CRM note summarization")
+    st.write("d) Fraud/anomaly detection")
+    st.write("e) Product recommendations")
+    st.write("f) Vision & speech: captioning, recognition")
 
     with st.expander("Limitations / Risks"):
         st.write("- **Quadratic compute** in standard attention with context length.")
