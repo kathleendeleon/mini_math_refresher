@@ -1,7 +1,6 @@
-# Core Math Topic Refreasher for AI applications
+# Core Math Topic Refreasher for AI Applications
 
-#### This AI-focused math refresher emphasizes linear algebra, probability, optimization, and numerical methods core topics.
-#### The goal is to understand the “math under the hood” of AI (instead of only calling PyTorch/TensorFlow black boxes). 
+#### This AI-focused math refresher emphasizes linear algebra, probability, optimization, and numerical methods core topics. The goal is to understand the “math under the hood” of AI (instead of only calling PyTorch/TensorFlow black boxes). 
 
 ## 1. Linear Algebra (the backbone)
   a) Vectors, matrices, tensors \
