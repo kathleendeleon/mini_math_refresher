@@ -2,7 +2,7 @@
 ### The goal is to understand the “math under the hood” of AI (instead of only calling PyTorch/TensorFlow black boxes). This AI-focused math refresher emphasizes linear algebra, probability, optimization, and numerical methods core topics
 
 ## 1. Linear Algebra (the backbone)
-  a) Vectors, matrices, tensors
+  a) Vectors, matrices, tensors \
   b) Matrix multiplication and properties (associativity, distributivity)
   c) Transpose, inverse, orthogonal, and symmetric matrices
   d) Dot products, norms, cosine similarity
