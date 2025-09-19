@@ -72,7 +72,6 @@ def ask_mcq(quiz_id, question, options, correct_idx, help_text=None):
     """
     if help_text:
         st.caption(help_text)
-    # Default selection (0) unless previously answered
     default_index = st.session_state.quiz_answers.get(quiz_id, 0)
     selected = st.radio(question, options, key=f"q_{quiz_id}", index=default_index)
     sel_idx = options.index(selected)
@@ -85,55 +84,54 @@ def ask_mcq(quiz_id, question, options, correct_idx, help_text=None):
         st.info(f"ℹ️ Selected: {options[sel_idx]}")
     return sel_idx, is_correct
 
-# ======================== Introduction Tab =========================
+# ======================== Introduction (single column) ===================
 
 def tab_introduction():
     st.subheader("What is Attention? (Executive & Technical View)")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("#### For Non-Technical Leaders")
-        st.write("""
-        **Attention is a smart prioritization mechanism.**  
-        When the model reads a sentence or analyzes data, it asks:
-        *“Which parts matter most for the current decision?”*  
-        It **weights important pieces higher** and down-weights the rest—
-        like giving more weight to key voices in a leadership meeting.
-        """)
-        st.markdown("**Business value:** filters noise, surfaces signal, adapts on the fly.")
-        st.markdown("**Why it changed the game:** enables models to keep track of long context and nuance.")
+    st.markdown("#### For Non-Technical Leaders")
+    st.write("""
+    **Attention is a smart prioritization mechanism.**  
+    When the model reads a sentence or analyzes data, it asks:
+    *“Which parts matter most for the current decision?”*  
+    It **weights important pieces higher** and down-weights the rest—
+    like giving more weight to key voices in a leadership meeting.
+    """)
+    st.markdown("**Business value:** filters noise, surfaces signal, adapts on the fly.")
+    st.markdown("**Why it changed the game:** enables models to keep track of long context and nuance.")
 
-        st.markdown("#### Real-World Applications")
-        st.write("- Search & Q/A, chat assistants, document summarization")
-        st.write("- Code completion, SQL generation")
-        st.write("- Customer support triage, CRM note summarization")
-        st.write("- Fraud/anomaly detection")
-        st.write("- Product recommendations")
-        st.write("- Vision & speech: captioning, recognition")
+    st.markdown("#### Real-World Applications")
+    st.write("- Search & Q/A, chat assistants, document summarization")
+    st.write("- Code completion, SQL generation")
+    st.write("- Customer support triage, CRM note summarization")
+    st.write("- Fraud/anomaly detection")
+    st.write("- Product recommendations")
+    st.write("- Vision & speech: captioning, recognition")
 
-        with st.expander("Limitations / Risks"):
-            st.write("- **Quadratic compute** in standard attention with context length.")
-            st.write("- **Hallucinations** if prompts/data are insufficient.")
-            st.write("- **Bias** mirrors training data; needs evaluation.")
+    with st.expander("Limitations / Risks"):
+        st.write("- **Quadratic compute** in standard attention with context length.")
+        st.write("- **Hallucinations** if prompts/data are insufficient.")
+        st.write("- **Bias** mirrors training data; needs evaluation.")
 
-    with col2:
-        st.markdown("#### Technical Summary")
-        st.code("Attention(Q, K, V) = softmax(Q Kᵀ / √d) V", language="text")
-        st.write("""
-        - Inputs: sequence **X** ∈ ℝ^{T×d}. Project to **Q = X W_q**, **K = X W_k**, **V = X W_v**  
-        - **Scores**: `S = Q Kᵀ / √d` (T×T)  
-        - **Weights**: `W = softmax(S)` row-wise  
-        - **Output**: `Y = W V`  
-        - **Causal mask** blocks future positions for generation.
-        """)
-        with st.expander("Glossary"):
-            st.write("- **Q (Query)**: what the current token is looking for.")
-            st.write("- **K (Key)**: what each token offers as a tag/index.")
-            st.write("- **V (Value)**: the content carried by each token.")
-            st.write("- **Scaling (√d)**: keeps dot-products in a stable range.")
+    st.markdown("#### Technical Summary")
+    st.code("Attention(Q, K, V) = softmax(Q Kᵀ / √d) V", language="text")
+    st.write("""
+    - Inputs: sequence **X** ∈ ℝ^{T×d}. Project to **Q = X W_q**, **K = X W_k**, **V = X W_v**  
+    - **Scores**: `S = Q Kᵀ / √d` (T×T)  
+    - **Weights**: `W = softmax(S)` row-wise  
+    - **Output**: `Y = W V`  
+    - **Causal mask** blocks future positions for generation.
+    """)
+    with st.expander("Glossary"):
+        st.write("- **Q (Query)**: what the current token is looking for.")
+        st.write("- **K (Key)**: what each token offers as a tag/index.")
+        st.write("- **V (Value)**: the content carried by each token.")
+        st.write("- **Scaling (√d)**: keeps dot-products in a stable range.")
 
-    st.markdown("---")
-    st.markdown("### Quick Intro Quiz")
+# ======================== Intro Quiz (separate tab) ======================
+
+def tab_intro_quiz():
+    st.subheader("Quick Intro Quiz")
     ask_mcq(
         "intro_1",
         "At a high level, attention lets the model…",
@@ -148,6 +146,44 @@ def tab_introduction():
         ["Document summarization", "Machine translation", "Sorting a list with quicksort"],
         correct_idx=2
     )
+
+# ======================== Lesson Formula Blocks ==========================
+
+def formulas_lesson1():
+    st.markdown("**Key formulas & shapes**")
+    st.latex(r"\text{Dot: } \langle u,v\rangle=\sum_i u_i v_i \quad;\quad \|u\|=\sqrt{\sum_i u_i^2}")
+    st.latex(r"\text{Cosine similarity: } \cos\theta=\frac{\langle u,v\rangle}{\|u\|\|v\|}")
+    st.latex(r"\text{Matmul: } C=A B,\; A\in\mathbb{R}^{m\times n},\; B\in\mathbb{R}^{n\times p}\Rightarrow C\in\mathbb{R}^{m\times p}")
+    st.latex(r"\text{Transpose: } (A^\top)_{ij}=A_{ji}")
+
+def formulas_lesson2():
+    st.markdown("**Key formulas**")
+    st.latex(r"\text{Softmax: } p_i=\frac{e^{z_i}}{\sum_j e^{z_j}} \;\;=\;\frac{e^{z_i-\max(z)}}{\sum_j e^{z_j-\max(z)}}")
+    st.latex(r"\text{Cross-entropy: } H(y,p)=-\sum_i y_i\log p_i \quad (\text{with one-hot }y)")
+    st.latex(r"\text{Softmax + CE gradient: } \frac{\partial H}{\partial z_i}=p_i-y_i")
+
+def formulas_lesson3():
+    st.markdown("**Key formulas**")
+    st.latex(r"\text{Objective: } f(x)=(x-a)^2,\;\; f'(x)=2(x-a)")
+    st.latex(r"\text{Gradient descent update: } x^{(t+1)}=x^{(t)}-\eta\,\nabla f(x^{(t)})")
+    st.latex(r"\text{Convergence intuition: smaller }\eta \text{ → stable; too large }\eta \text{ → divergence.}")
+
+def formulas_lesson4():
+    st.markdown("**2-layer NN for XOR (shapes)**")
+    st.latex(r"X\in\mathbb{R}^{N\times D},\; W_1\in\mathbb{R}^{H\times D},\; b_1\in\mathbb{R}^{H\times 1},\; W_2\in\mathbb{R}^{C\times H},\; b_2\in\mathbb{R}^{C\times 1}")
+    st.latex(r"Z_1=X W_1^\top + \mathbf{1} b_1^\top,\;\; A_1=\text{ReLU}(Z_1)")
+    st.latex(r"Z_2=A_1 W_2^\top + \mathbf{1} b_2^\top,\;\; P=\text{softmax}(Z_2)")
+    st.markdown("**Backprop (softmax+CE)**")
+    st.latex(r"\frac{\partial \mathcal{L}}{\partial Z_2}=P-Y")
+    st.latex(r"\frac{\partial \mathcal{L}}{\partial W_2}=(A_1)^\top (P-Y),\;\; \frac{\partial \mathcal{L}}{\partial b_2}=\sum_{n}(P-Y)_n")
+    st.latex(r"\frac{\partial \mathcal{L}}{\partial Z_1}=\left((P-Y)W_2\right)\odot \mathbb{1}[Z_1>0]")
+    st.latex(r"\frac{\partial \mathcal{L}}{\partial W_1}=X^\top \frac{\partial \mathcal{L}}{\partial Z_1},\;\; \frac{\partial \mathcal{L}}{\partial b_1}=\sum_{n}\left(\frac{\partial \mathcal{L}}{\partial Z_1}\right)_n")
+
+def formulas_lesson5():
+    st.markdown("**Scaled Dot-Product Attention**")
+    st.latex(r"Q=XW_q,\; K=XW_k,\; V=XW_v")
+    st.latex(r"S=\frac{QK^\top}{\sqrt{d}},\quad W=\text{softmax}(S)\;(\text{row-wise}),\quad Y=WV")
+    st.latex(r"\text{Causal mask: } S_{ij}\leftarrow \begin{cases}S_{ij} & j\le i\\ -\infty & j>i\end{cases}")
 
 # ======================== Lessons 1–5 =========================
 
@@ -166,6 +202,9 @@ def lesson1():
             st.write("A:", A); st.write("B:", B); st.write("C=A@B:", C)
         except Exception as e:
             st.error(f"Matrix multiply failed: {e}")
+
+    show_f = st.checkbox("Show formulas (LaTeX)", key="f_l1")
+    if show_f: formulas_lesson1()
 
     st.markdown("---")
     st.markdown("### Lesson 1 Quiz")
@@ -190,6 +229,9 @@ def lesson2():
     probs = softmax(logits); target = one_hot(true_idx, len(probs))
     st.write("softmax:", [round(p, 4) for p in probs])
     st.write("cross-entropy:", round(cross_entropy(target, probs), 6))
+
+    show_f = st.checkbox("Show formulas (LaTeX)", key="f_l2")
+    if show_f: formulas_lesson2()
 
     st.markdown("---")
     st.markdown("### Lesson 2 Quiz")
@@ -220,6 +262,9 @@ def lesson3():
     st.line_chart([fx for (_, _, fx) in history])
     st.write("Final x≈", round(x, 4), "f(x)≈", round(f(x), 6))
 
+    show_f = st.checkbox("Show formulas (LaTeX)", key="f_l3")
+    if show_f: formulas_lesson3()
+
     st.markdown("---")
     st.markdown("### Lesson 3 Quiz")
     ask_mcq(
@@ -247,33 +292,33 @@ def train_xor(epochs=2000, lr=0.1, hidden=4, debug=False):
     X, T = xor_dataset()  # X:(4x2), T:(4x2)
     D_in, D_h, D_out = 2, hidden, 2
 
-    W1, b1 = init_layer(D_in, D_h, std=0.8)  # W1:(h x 2), b1:(h x 1)
-    W2, b2 = init_layer(D_h, D_out, std=0.8) # W2:(2 x h), b2:(2 x 1)
+    W1, b1 = init_layer(D_in, D_h, std=0.8)  # W1:(H x D), b1:(H x 1)
+    W2, b2 = init_layer(D_h, D_out, std=0.8) # W2:(C x H), b2:(C x 1)
 
     for _ in range(epochs):
-        Z1 = lin_forward(X, W1, b1)        # (4 x h)
+        Z1 = lin_forward(X, W1, b1)        # (N x H)
         A1 = relu_forward(Z1)
-        Z2 = lin_forward(A1, W2, b2)       # (4 x 2)
-        Y  = softmax_forward(Z2)           # (4 x 2)
+        Z2 = lin_forward(A1, W2, b2)       # (N x C)
+        Y  = softmax_forward(Z2)           # (N x C)
 
         # dL/dZ2 = Y - T
-        dZ2 = [[(y - t) for y, t in zip(yrow, trow)] for yrow, trow in zip(Y, T)]  # (4 x 2)
+        dZ2 = [[(y - t) for y, t in zip(yrow, trow)] for yrow, trow in zip(Y, T)]  # (N x C)
 
         # dW2 = A1^T @ dZ2
-        dW2 = matmul(transpose(A1), dZ2)                    # (h x 2)
-        db2 = [[sum(col)] for col in transpose(dZ2)]        # (2 x 1)
+        dW2 = matmul(transpose(A1), dZ2)                    # (H x C)
+        db2 = [[sum(col)] for col in transpose(dZ2)]        # (C x 1)
 
         # dA1 = dZ2 @ W2
-        dA1 = matmul(dZ2, W2)                               # (4 x h)
+        dA1 = matmul(dZ2, W2)                               # (N x H)
         # dZ1 = dA1 * ReLU'(Z1)
         dZ1 = []
         for i in range(len(Z1)):
             dZ1.append([dA1[i][j] * (1.0 if Z1[i][j] > 0 else 0.0)
-                        for j in range(len(Z1[0]))])        # (4 x h)
+                        for j in range(len(Z1[0]))])        # (N x H)
 
-        # dW1 = X^T @ dZ1 -> (2 x h); transpose to (h x 2)
-        dW1 = transpose(matmul(transpose(X), dZ1))          # (h x 2)
-        db1 = [[sum(col)] for col in transpose(dZ1)]        # (h x 1)
+        # dW1 = X^T @ dZ1 -> (D x H); transpose to (H x D)
+        dW1 = transpose(matmul(transpose(X), dZ1))          # (H x D)
+        db1 = [[sum(col)] for col in transpose(dZ1)]        # (H x 1)
 
         # SGD step
         W2 = sub(W2, scalar_mul(dW2, lr))
@@ -312,6 +357,9 @@ def lesson4():
         st.error(f"Lesson 4 failed: {e}")
         st.stop()
 
+    show_f = st.checkbox("Show formulas (LaTeX)", key="f_l4")
+    if show_f: formulas_lesson4()
+
     st.markdown("---")
     st.markdown("### Lesson 4 Quiz")
     ask_mcq(
@@ -341,18 +389,35 @@ def attention(Q, K, V, causal=False):
 
 def lesson5():
     st.subheader("Lesson 5 — Scaled Dot-Product Attention")
-    T = st.slider("Seq length", 1, 8, 4); d = st.slider("Model dim", 1, 16, 6); dv = st.slider("Value dim", 1, 16, 6)
+    # Guarded sliders (avoid 0)
+    T = st.slider("Seq length (T)", 1, 32, 4, 1)
+    d = st.slider("Model dim (d)", 1, 64, 6, 1)
+    dv = st.slider("Value dim (dv)", 1, 64, 6, 1)
     causal = st.checkbox("Causal mask", True)
-    X  = [[random.gauss(0, 1) for _ in range(d)] for _ in range(T)]
-    Wq = randn_matrix(d, d, 0.4); Wk = randn_matrix(d, d, 0.4); Wv = randn_matrix(d, dv, 0.4)
-    Q  = matmul(X, Wq); K = matmul(X, Wk); V = matmul(X, Wv)
+
+    # Build shapes
+    X  = [[random.gauss(0, 1) for _ in range(d)] for _ in range(T)]  # (T x d)
+    Wq = randn_matrix(d, d, 0.4)   # (d x d)
+    Wk = randn_matrix(d, d, 0.4)   # (d x d)
+    Wv = randn_matrix(d, dv, 0.4)  # (d x dv)
+
     try:
+        Q  = matmul(X, Wq)    # (T x d)
+        K  = matmul(X, Wk)    # (T x d)
+        V  = matmul(X, Wv)    # (T x dv)
         Y, W, S = attention(Q, K, V, causal)
         st.write("Scores (QKᵀ/√d):"); st.dataframe(S, use_container_width=True)
         st.write("Weights (softmax rows):"); st.dataframe(W, use_container_width=True)
         st.write("Output Y = W V:"); st.dataframe(Y, use_container_width=True)
     except Exception as e:
         st.error(f"Attention computation failed: {e}")
+        st.code(
+            f"Debug shapes -> X:{_shape(X)}, Wq:{_shape(Wq)}, Wk:{_shape(Wk)}, Wv:{_shape(Wv)}",
+            language="text"
+        )
+
+    show_f = st.checkbox("Show formulas (LaTeX)", key="f_l5")
+    if show_f: formulas_lesson5()
 
     st.markdown("---")
     st.markdown("### Lesson 5 Quiz")
@@ -374,10 +439,12 @@ def lesson5():
 st.sidebar.title("📘 Theory Notes")
 lesson_pick = st.sidebar.radio(
     "Pick a lesson",
-    ["Intro", "1. Linear Algebra","2. Probability","3. Gradient Descent","4. Neural Nets","5. Attention", "Metrics"]
+    ["Intro", "Intro Quiz", "1. Linear Algebra","2. Probability","3. Gradient Descent","4. Neural Nets","5. Attention", "Metrics"]
 )
 if lesson_pick == "Intro":
     st.sidebar.markdown("**Attention = Focus.** Assign bigger weights to the most relevant parts of the input.")
+elif lesson_pick == "Intro Quiz":
+    st.sidebar.markdown("Test key ideas from the introduction.")
 elif lesson_pick.startswith("1"): st.sidebar.markdown("**Linear Algebra**: vectors, dot, norms, cosine, matrix multiply—backbone of embeddings & attention.")
 elif lesson_pick.startswith("2"): st.sidebar.markdown("**Probability**: softmax makes a distribution; cross-entropy trains classifiers.")
 elif lesson_pick.startswith("3"): st.sidebar.markdown("**Optimization**: follow the gradient downhill; tuning LR matters.")
@@ -423,11 +490,13 @@ def tab_metrics():
 # ============================== Main UI ===============================
 
 st.title("Attention From Scratch — Introduction + 5 Lessons")
-tabs = st.tabs(["Introduction","Lesson 1","Lesson 2","Lesson 3","Lesson 4","Lesson 5","Metrics"])
+tabs = st.tabs(["Introduction","Intro Quiz","Lesson 1","Lesson 2","Lesson 3","Lesson 4","Lesson 5","Metrics"])
 with tabs[0]: tab_introduction()
-with tabs[1]: lesson1()
-with tabs[2]: lesson2()
-with tabs[3]: lesson3()
-with tabs[4]: lesson4()
-with tabs[5]: lesson5()
-with tabs[6]: tab_metrics()
+with tabs[1]: tab_intro_quiz()
+with tabs[2]: lesson1()
+with tabs[3]: lesson2()
+with tabs[4]: lesson3()
+with tabs[5]: lesson4()
+with tabs[6]: lesson5()
+with tabs[7]: tab_metrics()
+
