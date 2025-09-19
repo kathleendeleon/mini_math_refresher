@@ -33,6 +33,55 @@ def relu(x): return x if x>0 else 0.0
 def apply_rowwise(A, fn): return [[fn(x) for x in row] for row in A]
 def randn_matrix(m, n, std=0.02): return [[random.gauss(0.0, std) for _ in range(n)] for _ in range(m)]
 
+# ======================== Introduction Tab =========================
+def tab_introduction():
+    st.subheader("What is Attention? (Executive & Technical View)")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### For Non-Technical Leaders")
+        st.write("""
+        **Attention is a smart prioritization mechanism.**  
+        When the model reads a sentence or analyzes data, it asks:
+        *“Which parts matter most for the current decision?”*  
+        It **weights important pieces higher** and down-weights the rest—
+        like giving more weight to key voices in a leadership meeting.
+        """)
+        st.markdown("**Business value:** filters noise, surfaces signal, adapts on the fly.")
+        st.markdown("**Why it changed the game:** enables models to keep track of long context and nuance.")
+
+        st.markdown("#### Real-World Applications")
+        st.write("- Search & Q/A, chat assistants, document summarization")
+        st.write("- Code completion, SQL generation")
+        st.write("- Customer support triage, CRM note summarization")
+        st.write("- Fraud/anomaly detection (focus on suspicious patterns)")
+        st.write("- Product recommendations (focus on relevant behaviors)")
+        st.write("- Vision & speech: image captioning, speech recognition")
+
+        with st.expander("Limitations / Risks"):
+            st.write("- **Compute cost** grows with context length (quadratic time/memory in standard attention).")
+            st.write("- **Hallucinations** if training data lacks facts or prompts are unclear.")
+            st.write("- **Bias** can appear if data has bias; needs monitoring & evaluation.")
+
+    with col2:
+        st.markdown("#### Technical Summary")
+        st.code("Attention(Q, K, V) = softmax(Q Kᵀ / √d) V", language="text")
+        st.write("""
+        - Inputs: a sequence of token embeddings **X** ∈ ℝ^{T×d}  
+          Project to **Q = X W_q**, **K = X W_k**, **V = X W_v**  
+        - **Scores**: similarity matrix `S = Q Kᵀ / √d` (T×T)  
+        - **Weights**: `W = softmax(S)` row-wise (each row sums to 1)  
+        - **Output**: `Y = W V` (weighted mixture of values)
+        - **Causal mask** (for generation): prevent attending to future tokens.
+        """)
+        with st.expander("Glossary"):
+            st.write("- **Q (Query)**: what the current token is looking for.")
+            st.write("- **K (Key)**: what each token offers as a tag/index.")
+            st.write("- **V (Value)**: the content carried by each token.")
+            st.write("- **Scaling (√d)**: keeps dot-products in a numerically stable range.")
+        st.markdown("#### Why it Scales")
+        st.write("Parallelizable across tokens; replaces recurrence with matrix multiplies; hardware-friendly.")
+
 # ======================== Lesson Content =========================
 def lesson1():
     st.subheader("Lesson 1 — Linear Algebra Foundations")
@@ -68,7 +117,7 @@ def lesson3():
 
 def xor_dataset(): return [[0,0],[0,1],[1,0],[1,1]], [[1,0],[0,1],[0,1],[1,0]]
 def lin_forward(X,W,b): return add(matmul(X, transpose(W)), transpose(b))
-def relu_forward(X): return apply_rowwise(X, relu); 
+def relu_forward(X): return apply_rowwise(X, relu)
 def softmax_forward(X): return softmax_rows(X)
 def init_layer(inp,out,std=0.5): return randn_matrix(out,inp,std), [[0.0] for _ in range(out)]
 
@@ -106,22 +155,30 @@ def lesson5():
     Wq=randn_matrix(d,d,0.4); Wk=randn_matrix(d,d,0.4); Wv=randn_matrix(d,dv,0.4)
     Q=matmul(X,Wq); K=matmul(X,Wk); V=matmul(X,Wv)
     Y,W,S=attention(Q,K,V,causal)
-    st.write("Scores:"); st.dataframe(S); st.write("Weights:"); st.dataframe(W); st.write("Output Y:"); st.dataframe(Y)
+    st.write("Scores (QKᵀ/√d):"); st.dataframe(S, use_container_width=True)
+    st.write("Weights (softmax rows):"); st.dataframe(W, use_container_width=True)
+    st.write("Output Y = W V:"); st.dataframe(Y, use_container_width=True)
 
 # ========================== Sidebar Theory ============================
 st.sidebar.title("📘 Theory Notes")
-lesson = st.sidebar.radio("Pick a lesson", ["1. Linear Algebra","2. Probability","3. Gradient Descent","4. Neural Nets","5. Attention"])
-if lesson.startswith("1"): st.sidebar.markdown("**Linear Algebra**: vectors, dot products, norms, cosine similarity, matrix multiplication, transpose. Core of embeddings and attention (Q@Kᵀ).")
-elif lesson.startswith("2"): st.sidebar.markdown("**Probability**: Softmax maps logits → probabilities. Cross-entropy measures distance between predicted vs true distributions. Used in classification loss.")
-elif lesson.startswith("3"): st.sidebar.markdown("**Optimization**: Gradient descent updates params by moving opposite the gradient. Learning rate controls step size; too high → divergence.")
-elif lesson.startswith("4"): st.sidebar.markdown("**Neural Nets**: Stack of linear layers + nonlinearities. Backprop applies chain rule to compute gradients.")
-elif lesson.startswith("5"): st.sidebar.markdown("**Attention**: Q, K, V projections. Attention(Q,K,V)=Softmax(QKᵀ/√d)V. Causal mask prevents tokens from attending to future positions.")
+lesson_pick = st.sidebar.radio(
+    "Pick a lesson",
+    ["Intro", "1. Linear Algebra","2. Probability","3. Gradient Descent","4. Neural Nets","5. Attention"]
+)
+if lesson_pick == "Intro":
+    st.sidebar.markdown("**Attention = Focus.** Assign bigger weights to the most relevant parts of the input.")
+elif lesson_pick.startswith("1"): st.sidebar.markdown("**Linear Algebra**: vectors, dot, norms, cosine, matrix multiply—backbone of embeddings & attention.")
+elif lesson_pick.startswith("2"): st.sidebar.markdown("**Probability**: softmax makes a distribution; cross-entropy trains classifiers.")
+elif lesson_pick.startswith("3"): st.sidebar.markdown("**Optimization**: follow the gradient downhill; tuning LR matters.")
+elif lesson_pick.startswith("4"): st.sidebar.markdown("**Neural Nets**: stacked linear + nonlinear layers; backprop is chain rule.")
+elif lesson_pick.startswith("5"): st.sidebar.markdown("**Attention**: softmax(QKᵀ/√d)V with optional causal masking.")
 
 # ============================== Main UI ===============================
-st.title("🧠 Attention From Scratch — 5 Lessons")
-tabs=st.tabs(["Lesson 1","Lesson 2","Lesson 3","Lesson 4","Lesson 5"])
-with tabs[0]: lesson1()
-with tabs[1]: lesson2()
-with tabs[2]: lesson3()
-with tabs[3]: lesson4()
-with tabs[4]: lesson5()
+st.title("🧠 Attention From Scratch — 5 Lessons + Introduction")
+tabs = st.tabs(["Introduction","Lesson 1","Lesson 2","Lesson 3","Lesson 4","Lesson 5"])
+with tabs[0]: tab_introduction()
+with tabs[1]: lesson1()
+with tabs[2]: lesson2()
+with tabs[3]: lesson3()
+with tabs[4]: lesson4()
+with tabs[5]: lesson5()
