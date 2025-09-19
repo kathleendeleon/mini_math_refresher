@@ -56,6 +56,60 @@ def relu(x): return x if x > 0 else 0.0
 def apply_rowwise(A, fn): return [[fn(x) for x in row] for row in A]
 def randn_matrix(m, n, std=0.02): return [[random.gauss(0.0, std) for _ in range(n)] for _ in range(m)]
 
+def ensure_2d(M, rows, cols, name="matrix"):
+    """
+    Coerce M into a rectangular 2D list of shape (rows x cols).
+    - If M already has that shape, return it.
+    - If it's the transposed shape (cols x rows), transpose it.
+    - If it's a row/column vector of the right length, reshape to rows x cols.
+    - As a last resort, flatten and fill row-major (warns once).
+    """
+    # Already rectangular?
+    try:
+        r, c = _assert_rectangular(M, name)
+        if r == rows and c == cols:
+            return M
+        if r == cols and c == rows:
+            return transpose(M)
+    except Exception:
+        pass  # handle 1D or ragged below
+
+    # 1D vector → row/column
+    if isinstance(M, list) and len(M) > 0 and not isinstance(M[0], list):
+        if rows == 1 and len(M) == cols:
+            return [M[:]]
+        if cols == 1 and len(M) == rows:
+            return [[x] for x in M]
+
+    # Special case: [[x0, x1, ..., x_{rows-1}]] should be (rows x 1)
+    if (isinstance(M, list) and len(M) == 1 and
+        isinstance(M[0], list) and len(M[0]) == rows and cols == 1):
+        return [[M[0][i]] for i in range(rows)]
+
+    # Last resort: flatten & fill
+    vals = []
+    if isinstance(M, list):
+        for row in M:
+            if isinstance(row, list):
+                vals.extend(row)
+            else:
+                vals.append(row)
+    else:
+        vals = [M]
+
+    out = [[0.0] * cols for _ in range(rows)]
+    k = 0
+    for i in range(rows):
+        for j in range(cols):
+            if k < len(vals):
+                out[i][j] = vals[k]
+                k += 1
+    try:
+        st.warning(f"Coerced {name} to shape {rows}x{cols}")
+    except Exception:
+        pass
+    return out
+
 # =================== Session state for quizzes & metrics ==================
 
 if "quiz_answers" not in st.session_state:
@@ -100,7 +154,7 @@ def tab_introduction():
     st.markdown("**Business value:** filters noise, surfaces signal, adapts on the fly.")
     st.markdown("**Why it changed the game:** enables models to keep track of long context and nuance.")
 
-    st.markdown("#### Example of Real-World Applications")
+    st.markdown("#### Real-World Applications")
     st.write("""
     - Search & Q/A, chat assistants, document summarization
     - Code completion, SQL generation
@@ -109,7 +163,7 @@ def tab_introduction():
     - Product recommendations
     - Vision & speech: captioning, recognition
     """)
-
+    
     with st.expander("Limitations / Risks"):
         st.write("- **Quadratic compute** in standard attention with context length.")
         st.write("- **Hallucinations** if prompts/data are insufficient.")
@@ -155,20 +209,20 @@ def formulas_lesson1():
     st.markdown("**Key formulas & shapes**")
     st.latex(r"\text{Dot: } \langle u,v\rangle=\sum_i u_i v_i \quad;\quad \|u\|=\sqrt{\sum_i u_i^2}")
     st.latex(r"\text{Cosine similarity: } \cos\theta=\frac{\langle u,v\rangle}{\|u\|\|v\|}")
-    st.latex(r"\text{Matmul: } C=A B,\; A\in\mathbb{R}^{m\times n},\; B\in\mathbb{R}^{n\times p}\Rightarrow C\in\mathbb{R}^{m\times p}")
+    st.latex(r"\text{Matmul: } C=AB,\; A\in\mathbb{R}^{m\times n},\; B\in\mathbb{R}^{n\times p}\Rightarrow C\in\mathbb{R}^{m\times p}")
     st.latex(r"\text{Transpose: } (A^\top)_{ij}=A_{ji}")
 
 def formulas_lesson2():
     st.markdown("**Key formulas**")
-    st.latex(r"\text{Softmax: } p_i=\frac{e^{z_i}}{\sum_j e^{z_j}} \;\;=\;\frac{e^{z_i-\max(z)}}{\sum_j e^{z_j-\max(z)}}")
+    st.latex(r"\text{Softmax: } p_i=\frac{e^{z_i}}{\sum_j e^{z_j}} \;=\;\frac{e^{z_i-\max(z)}}{\sum_j e^{z_j-\max(z)}}")
     st.latex(r"\text{Cross-entropy: } H(y,p)=-\sum_i y_i\log p_i \quad (\text{with one-hot }y)")
     st.latex(r"\text{Softmax + CE gradient: } \frac{\partial H}{\partial z_i}=p_i-y_i")
 
 def formulas_lesson3():
     st.markdown("**Key formulas**")
     st.latex(r"\text{Objective: } f(x)=(x-a)^2,\;\; f'(x)=2(x-a)")
-    st.latex(r"\text{Gradient descent update: } x^{(t+1)}=x^{(t)}-\eta\,\nabla f(x^{(t)})")
-    st.latex(r"\text{Convergence intuition: smaller }\eta \text{ → stable; too large }\eta \text{ → divergence.}")
+    st.latex(r"\text{GD update: } x^{(t+1)}=x^{(t)}-\eta\,\nabla f(x^{(t)})")
+    st.latex(r"\text{Smaller }\eta \text{ → stable; too large }\eta \text{ → divergence.}")
 
 def formulas_lesson4():
     st.markdown("**2-layer NN for XOR (shapes)**")
@@ -291,36 +345,45 @@ def init_layer(inp, out, std=0.5): return randn_matrix(out, inp, std), [[0.0] fo
 def train_xor(epochs=2000, lr=0.1, hidden=4, debug=False):
     # Ensure hidden >= 1 to avoid zero-width layers
     hidden = max(1, int(hidden))
-    X, T = xor_dataset()  # X:(4x2), T:(4x2)
-    D_in, D_h, D_out = 2, hidden, 2
+    X, T = xor_dataset()  # X:(N x D), T:(N x C)
+    N, D = len(X), len(X[0])
+    H, C = hidden, len(T[0])
 
-    W1, b1 = init_layer(D_in, D_h, std=0.8)  # W1:(H x D), b1:(H x 1)
-    W2, b2 = init_layer(D_h, D_out, std=0.8) # W2:(C x H), b2:(C x 1)
+    W1, b1 = init_layer(D, H, std=0.8)  # W1:(H x D), b1:(H x 1)
+    W2, b2 = init_layer(H, C, std=0.8)  # W2:(C x H), b2:(C x 1)
 
     for _ in range(epochs):
-        Z1 = lin_forward(X, W1, b1)        # (N x H)
-        A1 = relu_forward(Z1)
-        Z2 = lin_forward(A1, W2, b2)       # (N x C)
-        Y  = softmax_forward(Z2)           # (N x C)
+        # Forward
+        Z1 = lin_forward(X, W1, b1)            # (N x H)
+        Z1 = ensure_2d(Z1, N, H, "Z1")
+        A1 = relu_forward(Z1)                  # (N x H)
+        A1 = ensure_2d(A1, N, H, "A1")
 
-        # dL/dZ2 = Y - T
+        Z2 = lin_forward(A1, W2, b2)           # (N x C)
+        Z2 = ensure_2d(Z2, N, C, "Z2")
+        Y  = softmax_forward(Z2)               # (N x C)
+        Y  = ensure_2d(Y, N, C, "Y")
+
+        # Backward
         dZ2 = [[(y - t) for y, t in zip(yrow, trow)] for yrow, trow in zip(Y, T)]  # (N x C)
+        dZ2 = ensure_2d(dZ2, N, C, "dZ2")
 
-        # dW2 = A1^T @ dZ2
-        dW2 = matmul(transpose(A1), dZ2)                    # (H x C)
-        db2 = [[sum(col)] for col in transpose(dZ2)]        # (C x 1)
+        dW2 = matmul(transpose(A1), dZ2)       # (H x C)
+        db2 = [[sum(col)] for col in transpose(dZ2)]  # (C x 1)
 
-        # dA1 = dZ2 @ W2
-        dA1 = matmul(dZ2, W2)                               # (N x H)
-        # dZ1 = dA1 * ReLU'(Z1)
+        dA1 = matmul(dZ2, W2)                  # (N x H)
+        dA1 = ensure_2d(dA1, N, H, "dA1")
+
+        # ReLU' gate
         dZ1 = []
-        for i in range(len(Z1)):
-            dZ1.append([dA1[i][j] * (1.0 if Z1[i][j] > 0 else 0.0)
-                        for j in range(len(Z1[0]))])        # (N x H)
+        for i in range(N):
+            dZ1.append([dA1[i][j] * (1.0 if Z1[i][j] > 0 else 0.0) for j in range(H)])
+        dZ1 = ensure_2d(dZ1, N, H, "dZ1")      # critical when H == 1
 
-        # dW1 = X^T @ dZ1 -> (D x H); transpose to (H x D)
-        dW1 = transpose(matmul(transpose(X), dZ1))          # (H x D)
-        db1 = [[sum(col)] for col in transpose(dZ1)]        # (H x 1)
+        # dW1 = X^T @ dZ1 -> (D x H) then transpose to (H x D)
+        Xt = transpose(ensure_2d(X, N, D, "X"))
+        dW1 = transpose(matmul(Xt, dZ1))       # (H x D)
+        db1 = [[sum(col)] for col in transpose(dZ1)]  # (H x 1)
 
         # SGD step
         W2 = sub(W2, scalar_mul(dW2, lr))
@@ -330,12 +393,15 @@ def train_xor(epochs=2000, lr=0.1, hidden=4, debug=False):
 
     if debug:
         st.caption(
-            f"Shapes — X:{_shape(X)}, T:{_shape(T)}, W1:{_shape(W1)}, b1:{_shape(b1)}, W2:{_shape(W2)}, b2:{_shape(b2)}"
+            f"Shapes — X:{_shape(X)}, T:{_shape(T)}, W1:{_shape(W1)}, b1:{_shape(b1)}, "
+            f"W2:{_shape(W2)}, b2:{_shape(b2)}"
         )
 
     # Final forward for reporting
-    Z1 = lin_forward(X, W1, b1); A1 = relu_forward(Z1)
-    Z2 = lin_forward(A1, W2, b2); Y = softmax_forward(Z2)
+    Z1 = ensure_2d(lin_forward(X, W1, b1), N, H, "Z1_final")
+    A1 = ensure_2d(relu_forward(Z1), N, H, "A1_final")
+    Z2 = ensure_2d(lin_forward(A1, W2, b2), N, C, "Z2_final")
+    Y  = ensure_2d(softmax_forward(Z2), N, C, "Y_final")
     return Y
 
 def lesson4():
@@ -501,4 +567,3 @@ with tabs[4]: lesson3()
 with tabs[5]: lesson4()
 with tabs[6]: lesson5()
 with tabs[7]: tab_metrics()
-
