@@ -56,14 +56,9 @@ def relu(x): return x if x > 0 else 0.0
 def apply_rowwise(A, fn): return [[fn(x) for x in row] for row in A]
 def randn_matrix(m, n, std=0.02): return [[random.gauss(0.0, std) for _ in range(n)] for _ in range(m)]
 
+# (We keep ensure_2d for other lessons if needed, but Lesson 4 won't use it to avoid warnings.)
 def ensure_2d(M, rows, cols, name="matrix"):
-    """
-    Coerce M into a rectangular 2D list of shape (rows x cols).
-    - If M already has that shape, return it.
-    - If it's the transposed shape (cols x rows), transpose it.
-    - If it's a row/column vector of the right length, reshape to rows x cols.
-    - As a last resort, flatten and fill row-major (warns once).
-    """
+    """Coerce M to (rows x cols) if possible; used sparingly outside Lesson 4 sandbox."""
     # Already rectangular?
     try:
         r, c = _assert_rectangular(M, name)
@@ -72,42 +67,32 @@ def ensure_2d(M, rows, cols, name="matrix"):
         if r == cols and c == rows:
             return transpose(M)
     except Exception:
-        pass  # handle 1D or ragged below
+        pass
 
     # 1D vector → row/column
     if isinstance(M, list) and len(M) > 0 and not isinstance(M[0], list):
-        if rows == 1 and len(M) == cols:
-            return [M[:]]
-        if cols == 1 and len(M) == rows:
-            return [[x] for x in M]
+        if rows == 1 and len(M) == cols: return [M[:]]
+        if cols == 1 and len(M) == rows: return [[x] for x in M]
 
-    # Special case: [[x0, x1, ..., x_{rows-1}]] should be (rows x 1)
+    # Special case: [[x0,...,x_{rows-1}]] -> (rows x 1)
     if (isinstance(M, list) and len(M) == 1 and
         isinstance(M[0], list) and len(M[0]) == rows and cols == 1):
         return [[M[0][i]] for i in range(rows)]
 
-    # Last resort: flatten & fill
+    # Last resort: flatten & fill silently (to avoid yellow spam)
     vals = []
     if isinstance(M, list):
         for row in M:
-            if isinstance(row, list):
-                vals.extend(row)
-            else:
-                vals.append(row)
+            if isinstance(row, list): vals.extend(row)
+            else: vals.append(row)
     else:
         vals = [M]
-
     out = [[0.0] * cols for _ in range(rows)]
     k = 0
     for i in range(rows):
         for j in range(cols):
             if k < len(vals):
-                out[i][j] = vals[k]
-                k += 1
-    try:
-        st.warning(f"Coerced {name} to shape {rows}x{cols}")
-    except Exception:
-        pass
+                out[i][j] = vals[k]; k += 1
     return out
 
 # =================== Session state for quizzes & metrics ==================
@@ -120,22 +105,16 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = f"S{int(time.time())}-{random.randint(1000,9999)}"
 
 def ask_mcq(quiz_id, question, options, correct_idx, help_text=None):
-    """
-    Render a multiple-choice question and store the answer in session_state.
-    Returns (selected_idx, is_correct).
-    """
-    if help_text:
-        st.caption(help_text)
+    """Render MCQ and store answer."""
+    if help_text: st.caption(help_text)
     default_index = st.session_state.quiz_answers.get(quiz_id, 0)
     selected = st.radio(question, options, key=f"q_{quiz_id}", index=default_index)
     sel_idx = options.index(selected)
     st.session_state.quiz_answers[quiz_id] = sel_idx
     is_correct = (sel_idx == correct_idx)
     st.session_state.quiz_scores[quiz_id] = is_correct
-    if is_correct:
-        st.success("✅ Correct!")
-    else:
-        st.info(f"ℹ️ Selected: {options[sel_idx]}")
+    if is_correct: st.success("✅ Correct!")
+    else:          st.info(f"ℹ️ Selected: {options[sel_idx]}")
     return sel_idx, is_correct
 
 # ======================== Introduction (single column) ===================
@@ -241,7 +220,7 @@ def formulas_lesson5():
     st.latex(r"S=\frac{QK^\top}{\sqrt{d}},\quad W=\text{softmax}(S)\;(\text{row-wise}),\quad Y=WV")
     st.latex(r"\text{Causal mask: } S_{ij}\leftarrow \begin{cases}S_{ij} & j\le i\\ -\infty & j>i\end{cases}")
 
-# ======================== Lessons 1–5 =========================
+# ======================== Lessons 1–3 =========================
 
 def lesson1():
     st.subheader("Lesson 1 — Linear Algebra Foundations")
@@ -336,94 +315,109 @@ def lesson3():
         correct_idx=1
     )
 
-def xor_dataset(): return [[0,0],[0,1],[1,0],[1,1]], [[1,0],[0,1],[0,1],[1,0]]
+# ======================== XOR Helpers (Lesson 4 Sandbox) ==================
+
+def xor_dataset(): 
+    return [[0,0],[0,1],[1,0],[1,1]], [[1,0],[0,1],[0,1],[1,0]]  # X (4x2), T one-hot (4x2)
+
 def lin_forward(X, W, b): return add(matmul(X, transpose(W)), transpose(b))
 def relu_forward(X): return apply_rowwise(X, relu)
 def softmax_forward(X): return softmax_rows(X)
 def init_layer(inp, out, std=0.5): return randn_matrix(out, inp, std), [[0.0] for _ in range(out)]
 
-def train_xor(epochs=2000, lr=0.1, hidden=4, debug=False):
-    # Ensure hidden >= 1 to avoid zero-width layers
-    hidden = max(1, int(hidden))
-    X, T = xor_dataset()  # X:(N x D), T:(N x C)
-    N, D = len(X), len(X[0])
-    H, C = hidden, len(T[0])
+def nn_init(H=2, std=0.8):
+    """Initialize a stable 2-layer net for XOR: D=2 -> H -> C=2."""
+    W1 = randn_matrix(H, 2, std)         # (H x 2)
+    b1 = [[0.0] for _ in range(H)]       # (H x 1)
+    W2 = randn_matrix(2, H, std)         # (2 x H)
+    b2 = [[0.0] for _ in range(2)]       # (2 x 1)
+    return W1, b1, W2, b2
 
-    W1, b1 = init_layer(D, H, std=0.8)  # W1:(H x D), b1:(H x 1)
-    W2, b2 = init_layer(H, C, std=0.8)  # W2:(C x H), b2:(C x 1)
+def nn_forward(X, W1, b1, W2, b2):
+    """Forward pass only."""
+    Z1 = lin_forward(X, W1, b1)          # (N x H)
+    A1 = relu_forward(Z1)                 # (N x H)
+    Z2 = lin_forward(A1, W2, b2)         # (N x C)
+    Y  = softmax_forward(Z2)             # (N x C)
+    return Z1, A1, Z2, Y
 
-    for _ in range(epochs):
-        # Forward
-        Z1 = lin_forward(X, W1, b1)            # (N x H)
-        Z1 = ensure_2d(Z1, N, H, "Z1")
-        A1 = relu_forward(Z1)                  # (N x H)
-        A1 = ensure_2d(A1, N, H, "A1")
+def nn_backward_step(X, T, params, lr=0.1):
+    """
+    Do exactly one SGD step and return (new_params, loss, Y).
+    params = (W1,b1,W2,b2)
+    """
+    W1, b1, W2, b2 = params
+    Z1, A1, Z2, Y = nn_forward(X, W1, b1, W2, b2)
 
-        Z2 = lin_forward(A1, W2, b2)           # (N x C)
-        Z2 = ensure_2d(Z2, N, C, "Z2")
-        Y  = softmax_forward(Z2)               # (N x C)
-        Y  = ensure_2d(Y, N, C, "Y")
+    loss = cross_entropy_rows(T, Y)
 
-        # Backward
-        dZ2 = [[(y - t) for y, t in zip(yrow, trow)] for yrow, trow in zip(Y, T)]  # (N x C)
-        dZ2 = ensure_2d(dZ2, N, C, "dZ2")
+    # Gradients
+    dZ2 = [[(y - t) for y, t in zip(yrow, trow)] for yrow, trow in zip(Y, T)]  # (N x C)
+    dW2 = matmul(transpose(A1), dZ2)                    # (H x C)
+    db2 = [[sum(col)] for col in transpose(dZ2)]        # (C x 1)
 
-        dW2 = matmul(transpose(A1), dZ2)       # (H x C)
-        db2 = [[sum(col)] for col in transpose(dZ2)]  # (C x 1)
+    dA1 = matmul(dZ2, W2)                               # (N x H)
+    dZ1 = [[dA1[i][j] * (1.0 if Z1[i][j] > 0 else 0.0) for j in range(len(Z1[0]))]
+           for i in range(len(Z1))]                     # (N x H)
+    dW1 = transpose(matmul(transpose(X), dZ1))          # (H x D)
+    db1 = [[sum(col)] for col in transpose(dZ1)]        # (H x 1)
 
-        dA1 = matmul(dZ2, W2)                  # (N x H)
-        dA1 = ensure_2d(dA1, N, H, "dA1")
+    # SGD update
+    W2 = sub(W2, scalar_mul(dW2, lr))
+    b2 = sub(b2, scalar_mul(db2, lr))
+    W1 = sub(W1, scalar_mul(dW1, lr))
+    b1 = sub(b1, scalar_mul(db1, lr))
 
-        # ReLU' gate
-        dZ1 = []
-        for i in range(N):
-            dZ1.append([dA1[i][j] * (1.0 if Z1[i][j] > 0 else 0.0) for j in range(H)])
-        dZ1 = ensure_2d(dZ1, N, H, "dZ1")      # critical when H == 1
+    return (W1, b1, W2, b2), loss, Y
 
-        # dW1 = X^T @ dZ1 -> (D x H) then transpose to (H x D)
-        Xt = transpose(ensure_2d(X, N, D, "X"))
-        dW1 = transpose(matmul(Xt, dZ1))       # (H x D)
-        db1 = [[sum(col)] for col in transpose(dZ1)]  # (H x 1)
-
-        # SGD step
-        W2 = sub(W2, scalar_mul(dW2, lr))
-        b2 = sub(b2, scalar_mul(db2, lr))
-        W1 = sub(W1, scalar_mul(dW1, lr))
-        b1 = sub(b1, scalar_mul(db1, lr))
-
-    if debug:
-        st.caption(
-            f"Shapes — X:{_shape(X)}, T:{_shape(T)}, W1:{_shape(W1)}, b1:{_shape(b1)}, "
-            f"W2:{_shape(W2)}, b2:{_shape(b2)}"
-        )
-
-    # Final forward for reporting
-    Z1 = ensure_2d(lin_forward(X, W1, b1), N, H, "Z1_final")
-    A1 = ensure_2d(relu_forward(Z1), N, H, "A1_final")
-    Z2 = ensure_2d(lin_forward(A1, W2, b2), N, C, "Z2_final")
-    Y  = ensure_2d(softmax_forward(Z2), N, C, "Y_final")
-    return Y
+# ======================== Lesson 4 (Interactive Sandbox) ==================
 
 def lesson4():
-    st.subheader("Lesson 4 — Tiny Neural Net (XOR)")
-    epochs = st.slider("Epochs", 100, 5000, 2000, 100)
-    lr     = st.number_input("Learning rate", 0.0001, 1.0, 0.1, step=0.05, format="%.4f")
-    hidden = st.slider("Hidden units", 1, 16, 4, 1)  # min 1 to avoid zero-width layers
-    debug  = st.checkbox("Show debug shapes", False)
+    st.subheader("Lesson 4 — Tiny Neural Net (XOR) — Interactive Sandbox (H=2)")
 
-    try:
-        Y = train_xor(epochs=epochs, lr=lr, hidden=hidden, debug=debug)
-        X, T = xor_dataset()
-        rows = [{
-            "X": x,
-            "P": [round(v, 3) for v in y],
-            "pred": int(argmax(y)),
-            "true": int(argmax(t))
-        } for x, y, t in zip(X, Y, T)]
-        st.dataframe(rows, use_container_width=True)
-    except Exception as e:
-        st.error(f"Lesson 4 failed: {e}")
-        st.stop()
+    X, T = xor_dataset()  # X: (4x2), T: (4x2) one-hot
+    lr = st.slider("Learning rate", 0.001, 1.0, 0.1, 0.001)
+    steps = st.number_input("Steps (for 'Train N steps')", min_value=1, max_value=5000, value=50, step=10)
+
+    # Keep parameters in session_state (stable across reruns)
+    if "nn_params" not in st.session_state:
+        st.session_state.nn_params = nn_init(H=2)
+
+    colA, colB, colC = st.columns([1,1,2])
+    with colA:
+        if st.button("🔄 Re-initialize parameters"):
+            st.session_state.nn_params = nn_init(H=2)
+    with colB:
+        if st.button("🧭 Train 1 step"):
+            st.session_state.nn_params, loss, Y = nn_backward_step(X, T, st.session_state.nn_params, lr=lr)
+            st.toast(f"Trained 1 step — loss: {loss:.4f}")
+    with colC:
+        if st.button("🚀 Train N steps"):
+            loss = None
+            Y = None
+            for _ in range(int(steps)):
+                st.session_state.nn_params, loss, Y = nn_backward_step(X, T, st.session_state.nn_params, lr=lr)
+            st.success(f"Trained {steps} steps — loss: {loss:.4f}")
+
+    # Always show current forward pass
+    W1, b1, W2, b2 = st.session_state.nn_params
+    _, _, _, Y_now = nn_forward(X, W1, b1, W2, b2)
+    loss_now = cross_entropy_rows(T, Y_now)
+
+    rows = [{
+        "X": x,
+        "P": [round(v, 3) for v in y],
+        "pred": int(argmax(y)),
+        "true": int(argmax(t))
+    } for x, y, t in zip(X, Y_now, T)]
+    st.write(f"Current loss: **{loss_now:.4f}**")
+    st.dataframe(rows, use_container_width=True)
+
+    with st.expander("Show current parameters (shapes)"):
+        st.write(f"W1 (H×D = 2×2): {W1}")
+        st.write(f"b1 (H×1 = 2×1): {b1}")
+        st.write(f"W2 (C×H = 2×2): {W2}")
+        st.write(f"b2 (C×1 = 2×1): {b2}")
 
     show_f = st.checkbox("Show formulas (LaTeX)", key="f_l4")
     if show_f: formulas_lesson4()
@@ -442,6 +436,8 @@ def lesson4():
         ["We don't; linear+linear is universal", "To model non-linear decision boundaries", "To speed up matmul"],
         correct_idx=1
     )
+
+# ======================== Lesson 5 (Attention) ===========================
 
 def causal_mask(n): return [[1 if j <= i else 0 for j in range(n)] for i in range(n)]
 def masked_fill(M, mask, v=-1e9): return [[M[i][j] if mask[i][j] else v for j in range(len(M[0]))] for i in range(len(M))]
