@@ -583,9 +583,7 @@ def tab_metrics():
 # ============================== Main UI ===============================
 
 st.title("Attention From Scratch — Introduction + 5 Lessons")
-
-st.write("**Goal**: Understand the math under the hood of modern AI (especially Transformers) by coding everything from first principles—no NumPy, no PyTorch.")
-st.write("**Why no heavy libraries?** To remove the “black box” and make the math tangible. When you write `matmul`, `softmax`, or `attention` yourself, you feel why these operations matter.")
+st.write("**Goal**: Understand the math under the hood of modern AI (especially Transformers).")
 
 tabs = st.tabs(["Introduction","Intro Quiz","Lesson 1","Lesson 2","Lesson 3","Lesson 4","Lesson 5","Metrics"])
 with tabs[0]: tab_introduction()
