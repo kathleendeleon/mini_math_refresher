@@ -224,6 +224,12 @@ def formulas_lesson5():
 
 def lesson1():
     st.subheader("Lesson 1 — Linear Algebra Foundations")
+    
+    st.write("""
+    **Concepts**: vectors, dot products, norms, angles, matrix multiplication, transpose, cosine similarity.
+    **Why it matters**: Every neural net layer is basically `y = xW + b`. Attention uses `Q @ K^T`. Understanding these basics makes the rest feel natural.
+    """)
+    
     with st.expander("Vector demo: dot, norm, cosine"):
         u = [float(x) for x in st.text_input("u", "1,2,3").split(",")]
         v = [float(x) for x in st.text_input("v", "2,1,0").split(",")]
@@ -259,6 +265,12 @@ def lesson1():
 
 def lesson2():
     st.subheader("Lesson 2 — Probability & Softmax")
+
+    st.write("""
+    **Concepts**: turning scores (logits) into probabilities (softmax), comparing distributions (cross‑entropy).
+    **Why it matters**: Classifiers output logits; training minimizes cross‑entropy with the target distribution.
+    """)
+    
     logits = [float(x) for x in st.text_input("Logits", "2.0,1.0,0.1").split(",")]
     true_idx = st.number_input("True class", 0, len(logits)-1, 0)
     probs = softmax(logits); target = one_hot(true_idx, len(probs))
@@ -285,6 +297,12 @@ def lesson2():
 
 def lesson3():
     st.subheader("Lesson 3 — Gradient Descent Basics")
+
+    st.write("""
+    **Concepts**: gradient, numerical vs. analytical derivatives, gradient descent.
+    **Why it matters**: Training = minimizing a loss by following the gradient downhill.
+    """)
+    
     a = st.number_input("a (target)", -10.0, 10.0, 3.0)
     x0 = st.number_input("x0 (start)", -10.0, 10.0, 0.0)
     lr = st.slider("Learning rate", 0.01, 1.0, 0.2)
@@ -375,6 +393,11 @@ def nn_backward_step(X, T, params, lr=0.1):
 def lesson4():
     st.subheader("Lesson 4 — Tiny Neural Net (XOR) — Interactive Sandbox (H=2)")
 
+    st.write("""
+    **Concepts**: linear layers, activations, softmax + cross‑entropy, manual backprop.
+    **Why it matters**: Before Transformers, all deep nets are compositions of linear maps and nonlinearities.
+    """)
+
     X, T = xor_dataset()  # X: (4x2), T: (4x2) one-hot
     lr = st.slider("Learning rate", 0.001, 1.0, 0.1, 0.001)
     steps = st.number_input("Steps (for 'Train N steps')", min_value=1, max_value=5000, value=50, step=10)
@@ -453,6 +476,12 @@ def attention(Q, K, V, causal=False):
 
 def lesson5():
     st.subheader("Lesson 5 — Scaled Dot-Product Attention")
+
+    st.write("""
+    **Concepts**: projections (Q, K, V), similarity via dot products, scaling by √d, softmax over scores, causal masks.
+    **Why it matters**: This operation is the heart of GPT‑style Transformers.
+    """)
+    
     # Guarded sliders (avoid 0)
     T = st.slider("Seq length (T)", 1, 32, 4, 1)
     d = st.slider("Model dim (d)", 1, 64, 6, 1)
