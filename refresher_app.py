@@ -226,8 +226,8 @@ def lesson1():
     st.subheader("Lesson 1 — Linear Algebra Foundations")
     
     st.write("""
-    **Concepts**: vectors, dot products, norms, angles, matrix multiplication, transpose, cosine similarity.
-    **Why it matters**: Every neural net layer is basically `y = xW + b`. Attention uses `Q @ K^T`. Understanding these basics makes the rest feel natural.
+    - **Concepts**: vectors, dot products, norms, angles, matrix multiplication, transpose, cosine similarity.
+    - **Why it matters**: Every neural net layer is basically `y = xW + b`. Attention uses `Q @ K^T`. Understanding these basics makes the rest feel natural.
     """)
     
     with st.expander("Vector demo: dot, norm, cosine"):
@@ -267,8 +267,8 @@ def lesson2():
     st.subheader("Lesson 2 — Probability & Softmax")
 
     st.write("""
-    **Concepts**: turning scores (logits) into probabilities (softmax), comparing distributions (cross‑entropy).
-    **Why it matters**: Classifiers output logits; training minimizes cross‑entropy with the target distribution.
+    - **Concepts**: turning scores (logits) into probabilities (softmax), comparing distributions (cross‑entropy).
+    - **Why it matters**: Classifiers output logits; training minimizes cross‑entropy with the target distribution.
     """)
     
     logits = [float(x) for x in st.text_input("Logits", "2.0,1.0,0.1").split(",")]
@@ -299,8 +299,8 @@ def lesson3():
     st.subheader("Lesson 3 — Gradient Descent Basics")
 
     st.write("""
-    **Concepts**: gradient, numerical vs. analytical derivatives, gradient descent.
-    **Why it matters**: Training = minimizing a loss by following the gradient downhill.
+    - **Concepts**: gradient, numerical vs. analytical derivatives, gradient descent.
+    - **Why it matters**: Training = minimizing a loss by following the gradient downhill.
     """)
     
     a = st.number_input("a (target)", -10.0, 10.0, 3.0)
@@ -394,8 +394,8 @@ def lesson4():
     st.subheader("Lesson 4 — Tiny Neural Net (XOR) — Interactive Sandbox (H=2)")
 
     st.write("""
-    **Concepts**: linear layers, activations, softmax + cross‑entropy, manual backprop.
-    **Why it matters**: Before Transformers, all deep nets are compositions of linear maps and nonlinearities.
+    - **Concepts**: linear layers, activations, softmax + cross‑entropy, manual backprop.
+    - **Why it matters**: Before Transformers, all deep nets are compositions of linear maps and nonlinearities.
     """)
 
     X, T = xor_dataset()  # X: (4x2), T: (4x2) one-hot
@@ -478,8 +478,8 @@ def lesson5():
     st.subheader("Lesson 5 — Scaled Dot-Product Attention")
 
     st.write("""
-    **Concepts**: projections (Q, K, V), similarity via dot products, scaling by √d, softmax over scores, causal masks.
-    **Why it matters**: This operation is the heart of GPT‑style Transformers.
+    - **Concepts**: projections (Q, K, V), similarity via dot products, scaling by √d, softmax over scores, causal masks.
+    - **Why it matters**: This operation is the heart of GPT‑style Transformers.
     """)
     
     # Guarded sliders (avoid 0)
@@ -545,6 +545,9 @@ elif lesson_pick.startswith("4"): st.sidebar.markdown("**Neural Nets**: stacked 
 elif lesson_pick.startswith("5"): st.sidebar.markdown("**Attention**: softmax(QKᵀ/√d)V with optional causal masking.")
 elif lesson_pick == "Metrics":
     st.sidebar.markdown("View scores & download a CSV of your current session (anonymized id).")
+
+st.write("**Goal**: Understand the math under the hood of modern AI (especially Transformers) by coding everything from first principles—no NumPy, no PyTorch.")
+st.write("**Why no heavy libraries?** To remove the “black box” and make the math tangible. When you write `matmul`, `softmax`, or `attention` yourself, you feel why these operations matter.")
 
 # ============================== Metrics Tab ===========================
 
