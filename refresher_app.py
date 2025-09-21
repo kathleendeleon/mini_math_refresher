@@ -546,9 +546,6 @@ elif lesson_pick.startswith("5"): st.sidebar.markdown("**Attention**: softmax(QK
 elif lesson_pick == "Metrics":
     st.sidebar.markdown("View scores & download a CSV of your current session (anonymized id).")
 
-st.write("**Goal**: Understand the math under the hood of modern AI (especially Transformers) by coding everything from first principles—no NumPy, no PyTorch.")
-st.write("**Why no heavy libraries?** To remove the “black box” and make the math tangible. When you write `matmul`, `softmax`, or `attention` yourself, you feel why these operations matter.")
-
 # ============================== Metrics Tab ===========================
 
 def tab_metrics():
@@ -586,6 +583,10 @@ def tab_metrics():
 # ============================== Main UI ===============================
 
 st.title("Attention From Scratch — Introduction + 5 Lessons")
+
+st.write("**Goal**: Understand the math under the hood of modern AI (especially Transformers) by coding everything from first principles—no NumPy, no PyTorch.")
+st.write("**Why no heavy libraries?** To remove the “black box” and make the math tangible. When you write `matmul`, `softmax`, or `attention` yourself, you feel why these operations matter.")
+
 tabs = st.tabs(["Introduction","Intro Quiz","Lesson 1","Lesson 2","Lesson 3","Lesson 4","Lesson 5","Metrics"])
 with tabs[0]: tab_introduction()
 with tabs[1]: tab_intro_quiz()
